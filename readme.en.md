@@ -10,7 +10,6 @@ Web application for **sports facility reservations** (residents) and **administr
 
 - **Author (fork):** Gianfranco Enriquez (@GianES26)
 - **Fork:** https://github.com/GianES26/TeleLinkPUCP.git
-- **Demo:** pending
 - **README (ES):** `readme.md`  |  **README (EN):** `readme.en.md`
 
 ---
@@ -78,7 +77,7 @@ Complete table (methods + `@P` params, rules and effects):
 
 | Tool (exact method) | Description (`@Tool`) | Parameters (`@P`) | Relevant validations / rules | Output |
 |---|---|---|---|---|
-| `listAllServicios()` | Lists all available court types, showing their ID. | — | In the current implementation, it lists services whose name starts with `"Cancha"`. | `String` with HTML (`<br>`, `<strong>`) + guidance text. |
+| `listAllServicios()` | Lists all available court types, showing their ID. | — | In the current implementation, it lists services whose name starts with `"Cancha"`. | `String` as guidance text. |
 | `listEspaciosForServicio(Integer servicioDeportivoId)` | Lists all available sports facilities for a given court type, showing their ID. | `servicioDeportivoId` | Filters facilities with `estadoServicio == operativo`. | HTML detailed list (ID, name, venue, location, price/hour, schedule). |
 | `countEspaciosForServicio(String servicioDeportivo)` | Counts how many facilities exist for a given court type. | `servicioDeportivo` | Normalizes inputs (grass/loza/basketball/volleyball/multipropurpose). May ask for disambiguation if input is “Soccer”. | Text with count + follow-up question. |
 | `checkAvailabilityById(Integer espacioId, String start, String end)` | Checks if a specific facility is available for a time range using its ID. | `espacioId`, `start`, `end` | Parses `yyyy-MM-dd HH:mm`; future; `end > start`; within schedule; conflicts in DB (confirmed/completed). Suggests alternatives within the same service on conflicts. | Available/not + conflicts + alternatives + calculated cost. |
@@ -141,14 +140,12 @@ sequenceDiagram
   end
 ```
 
-### 1.6 Design notes (AI/Cloud/DevOps oriented)
+### 1.6 Design notes
 
-- I chose **Agent + Tools** to separate *conversation* (LLM) from *verifiable execution* (tools + DB).
-- Reduced hallucinations: availability/reservation/cancellation are determined by **tool-calling** (source of truth).
+- I chose **Agent + Tools** to separate *conversation* (LLM) from tools and DB.
+- Reduced hallucinations: availability/reservation/cancellation are determined by **tool-calling**  that asks the database.
 - Authenticated state: `HttpSession` ensures sensitive operations act for the **logged-in user**.
 - Input validation in tools: future dates, `end > start`, business hours, capacity (lane/occupancy/participants).
-- Observability (recommended): instrument tool latency, failure rates, traceability by `chatId`.
-- Security (recommended): rate limiting for the endpoint, action auditing (create/cancel), log redaction (PII).
 
 ---
 
@@ -372,9 +369,9 @@ TeleLinkPUCP/
 
 1) “Hola”
 2) “Lista espacios deportivos para Cancha de Fútbol Loza”
-3) “Consultar disponibilidad para Gimnasio Central el 2025-07-10 de 18:00 a 20:00”
-4) “Consultar disponibilidad para Piscina Olímpica, carril 2, para 3 personas el 2025-07-10 de 18:00 a 20:00”
-5) “Reservar la Cancha Multipropósito el 2025-07-10 de 18:00 a 20:00”
+3) “Consultar disponibilidad para Gimnasio Central el 2026-07-10 de 18:00 a 20:00”
+4) “Consultar disponibilidad para Piscina Olímpica, carril 2, para 3 personas el 2026-07-10 de 18:00 a 20:00”
+5) “Reservar la Cancha Multipropósito el 2026-07-10 de 18:00 a 20:00”
 6) “¿Cuáles son mis reservas futuras confirmadas?”
 7) “Cancelar mi reserva para [espacio] en [establecimiento] el [fecha] de [hora] a [hora]”
 
@@ -393,10 +390,10 @@ TeleLinkPUCP/
 
 ## 13. Production considerations
 
-If productizing this Agent+Tools pattern:
+If this Agent+Tools pattern is considered:
 
 - **Observability**: structured logs by `chatId`, tool-level latency metrics, success/failure counters.
-- **Security**: rate limiting for `POST /api/chat`, action auditing (create/cancel/refund), log sanitization (avoid PII).
+- **Security**: rate limiting for `POST /api/chat`, action auditing (create/cancel/refund).
 - **RAG with citations**: retrieval with cited sources (TOS/FAQ) and versioned policies.
 - **CI/CD**: build/test pipeline + dependency scanning + deployment.
 - **Containers**: Dockerfile and per-environment profiles for reproducible deployment.
@@ -406,7 +403,7 @@ If productizing this Agent+Tools pattern:
 ## 14. Credits and contribution
 
 - Academic project: **GTICS 2025-I (PUCP)**
-- Personal contribution — **Gianfranco Enriquez (@GianES26)**:
+- Personal contribution — **Gianfranco Enriquez Soel (@GianES26)**:
   - Role-based feature development (operational modules, flows, CRUDs).
   - **LangChain4j** integration design and implementation:
     - Agent: `LangChain4jAssistant.java`

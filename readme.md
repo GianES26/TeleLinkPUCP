@@ -78,7 +78,7 @@ Tabla completa (métodos + parámetros `@P`, reglas y efectos):
 
 | Tool (método exacto) | Descripción (`@Tool`) | Parámetros (`@P`) | Validaciones / reglas relevantes | Output |
 |---|---|---|---|---|
-| `listAllServicios()` | Lista todos los tipos de canchas disponibles, mostrando su ID. | — | En su implementación actual, lista servicios cuyo nombre empieza con `"Cancha"`. | `String` con HTML (`<br>`, `<strong>`) + texto guía. |
+| `listAllServicios()` | Lista todos los tipos de canchas disponibles, mostrando su ID. | — | En su implementación actual, lista servicios cuyo nombre empieza con `"Cancha"`. | `String` como texto guía. |
 | `listEspaciosForServicio(Integer servicioDeportivoId)` | Lista todos los espacios deportivos disponibles para un tipo de cancha, mostrando su ID. | `servicioDeportivoId` | Filtra espacios `estadoServicio == operativo`. | HTML con lista detallada (ID, nombre, establecimiento, ubicación, precio/hora, horario). |
 | `countEspaciosForServicio(String servicioDeportivo)` | Cuenta cuántos espacios deportivos existen para un tipo de cancha. | `servicioDeportivo` | Normaliza entradas (grass/loza/básquet/vóley/multipropósito). Puede pedir desambiguación si el input es “Fútbol”. | Texto con conteo + pregunta de seguimiento. |
 | `checkAvailabilityById(Integer espacioId, String start, String end)` | Verifica si un espacio deportivo específico está disponible para un rango de tiempo usando su ID. | `espacioId`, `start`, `end` | Parse `yyyy-MM-dd HH:mm`; futuro; `end > start`; dentro de horario; conflictos en BD (confirmada/completada). Sugiere alternativas del mismo servicio si hay conflicto. | Disponible/no + conflictos + alternativas + costo calculado. |
@@ -141,14 +141,12 @@ sequenceDiagram
   end
 ```
 
-### 1.6 Notas de diseño (enfocado a AI/Cloud/DevOps)
+### 1.6 Notas de diseño
 
-- Elegí **Agent + Tools** para separar *conversación* (LLM) de *ejecución verificable* (tools + BD).
-- Reduzco alucinaciones: la disponibilidad/reserva/cancelación se determinan por **tool-calling** (fuente de verdad).
+- Elegí **Agent + Tools** para separar *conversación* (LLM) de las tools y la BD.
+- Reduzco alucinaciones: la disponibilidad/reserva/cancelación se determinan por **tool-calling** que consulta con la base de datos.
 - Estado y autenticación: uso `HttpSession` para que las operaciones sensibles sean del **usuario logueado**.
 - Validaciones de input en tools: fechas futuras, `end > start`, horario de operación, capacidad (carril/aforo/participantes).
-- Observabilidad (recomendable): instrumentar latencia de tools, conteo de fallos, y trazabilidad por `chatId`.
-- Seguridad (recomendable): rate limiting del endpoint, auditoría de acciones (crear/cancelar), redacción de logs (PII).
 
 ---
 
@@ -372,9 +370,9 @@ TeleLinkPUCP/
 
 1) “Hola”
 2) “Lista espacios deportivos para Cancha de Fútbol Loza”
-3) “Consultar disponibilidad para Gimnasio Central el 2025-07-10 de 18:00 a 20:00”
-4) “Consultar disponibilidad para Piscina Olímpica, carril 2, para 3 personas el 2025-07-10 de 18:00 a 20:00”
-5) “Reservar la Cancha Multipropósito el 2025-07-10 de 18:00 a 20:00”
+3) “Consultar disponibilidad para Gimnasio Central el 2026-07-10 de 18:00 a 20:00”
+4) “Consultar disponibilidad para Piscina Olímpica, carril 2, para 3 personas el 2026-07-10 de 18:00 a 20:00”
+5) “Reservar la Cancha Multipropósito el 2026-07-10 de 18:00 a 20:00”
 6) “¿Cuáles son mis reservas futuras confirmadas?”
 7) “Cancelar mi reserva para [espacio] en [establecimiento] el [fecha] de [hora] a [hora]”
 
@@ -393,10 +391,10 @@ TeleLinkPUCP/
 
 ## 13. Consideraciones para producción
 
-Si se productiza este patrón Agent+Tools:
+Si se considera este patrón Agent+Tools:
 
 - **Observabilidad**: logs estructurados por `chatId`, métricas de latencia por tool, contadores de éxito/fallo.
-- **Seguridad**: rate limiting para `POST /api/chat`, auditoría de acciones (crear/cancelar/reembolsar), sanitización de logs (evitar PII).
+- **Seguridad**: rate limiting para `POST /api/chat`, auditoría de acciones (crear/cancelar/reembolsar).
 - **RAG con citas**: retrieval con fuentes citadas (TOS/FAQ) y políticas versionadas.
 - **CI/CD**: pipeline build/test + escaneo de dependencias + despliegue.
 - **Contenedores**: Dockerfile y perfiles por entorno para despliegue reproducible.
@@ -406,7 +404,7 @@ Si se productiza este patrón Agent+Tools:
 ## 14. Créditos y contribución
 
 - Proyecto académico: **GTICS 2025-I (PUCP)**
-- Contribución personal — **Gianfranco Enriquez (@GianES26)**:
+- Contribución personal — **Gianfranco Enriquez Soel (@GianES26)**:
   - Desarrollo de funcionalidades del sistema por roles (módulos operativos, flujos y CRUDs).
   - Diseño e implementación de la integración **LangChain4j**:
     - Agent: `LangChain4jAssistant.java`
